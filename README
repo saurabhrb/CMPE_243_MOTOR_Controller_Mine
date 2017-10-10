@@ -8,3 +8,34 @@ The general idea is to interact with the project through terminal commands.
 -----------------------------------------------------------------------------
 See "ChangeLog" for the changes made to the sample project source code.
 -----------------------------------------------------------------------------
+
+Git workflow:
+1. Checkout git repository (git clone https://gitlab.com/RollingThunder/rolling-thunder-rc-car.git)
+2. Checkout correct branch (must match remote branch name):
+	ex: git checkout motor_controller
+    a. To see branch names, use git ls-remote or use gitlab gui dropdown menu
+3. Open project in Eclipse, make changes to code/work on project
+4. To change branches, simply do "git checkout other_branch_name"
+
+Before pushing new code, do code review with team member.
+Push new code:
+1. Add individual files that were changed:
+	ex: git add file1
+	    git add file2
+2. Do a local commit of file changes:
+	ex: git commit -m "I'm adding file1, file2, because..."
+3. Push code to appropriate remote branch:
+	ex: git push origin motor_controller
+
+Pull from master:
+1. Get latest code from master branch
+	git rebase origin/master 
+
+Pull from branch:
+1. Make sure you are on the correct branch:
+	git branch
+	(^Will show a * next to current branch)
+2. Merge latest code changes with your branch:
+	git pull
+
+ 
