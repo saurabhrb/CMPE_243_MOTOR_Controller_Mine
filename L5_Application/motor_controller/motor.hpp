@@ -11,15 +11,18 @@
 //These are initialized in period_callback period_init
 extern PWM *MOTOR;
 extern PWM *SERVO;
+extern int rpm_count;
 
 PWM * get_motor_pwm(PWM::pwmType pwm);
 PWM * get_servo_pwm(PWM::pwmType pwm);
-void go_forward(float distance);
-void go_reverse(float distance);
+//Set speed of car
+void set_speed(float speed);
 //Turn to certain degree
-void go_left(float angle);
+void set_angle(float angle);
 
-void go_right(float angle);
+//Read RPM value
+void rpm_intr_hdlr();
+int get_rpm_val();
 
 //Bring the car to a halt at neutral steering position
 void stop_car();
