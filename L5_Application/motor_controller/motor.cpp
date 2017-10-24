@@ -128,6 +128,7 @@ void recv_system_start()
 		dbc_decode_MASTER_CONTROL(&master_can_msg, can_msg.data.bytes, &can_msg_hdr);
 		if (can_msg.data.bytes[0] == DRIVER_HEARTBEAT_cmd_START)
 		{
+			stop_car();
 			printf("recv start\n");
 		}
 	}

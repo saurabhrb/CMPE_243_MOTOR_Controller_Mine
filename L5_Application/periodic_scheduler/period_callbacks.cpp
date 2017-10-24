@@ -78,43 +78,6 @@ bool period_reg_tlm(void)
     return true; // Must return true upon success
 }
 
-void send_simple_can(void)
-{
-	can_msg_t can_tx_msg;
-	bool rc;
-	can_tx_msg.msg_id = 0x122;
-	can_tx_msg.frame_fields.is_29bit = 0;
-	can_tx_msg.frame_fields.data_len = 1;       // Send 8 bytes
-
-	if (SW.getSwitch(1))
-	{
-		can_tx_msg.data.bytes[0] = 0xAA;
-		//If switch is pressed, send 0xAA
-		rc = CAN_tx(can1, &can_tx_msg, portMAX_DELAY);
-		printf("sent message, rc, %d\n", rc);
-	} else {
-		can_tx_msg.data.bytes[0] = 0x00;
-		//If switch not pressed, send 0x00
-		CAN_tx(can1, &can_tx_msg, portMAX_DELAY);
-	}
-}
-
-void rx_simple_can(void)
-{
-	bool rc;
-	can_msg_t can_rx_msg;
-	rc = CAN_rx(can1, &can_rx_msg, 0x50);
-	if (can_rx_msg.data.bytes[0] == 0xAA)
-	{
-		printf("Received data 0xAA on CAN\n");
-		LE.on(1);
-	} else if (can_rx_msg.data.bytes[0] == 0xAA) {
-		printf("received data %x\n", can_rx_msg.data.bytes[0]);
-	} else {
-		LE.off(1);
-	}
-}
-
 /**
  * Below are your periodic functions.
  * The argument 'count' is the number of times each periodic task is called.
@@ -184,7 +147,6 @@ void period_10Hz(uint32_t count)
 
 void period_100Hz(uint32_t count)
 {
-	//Check CAN RX for change in motor/angle
 
 }
 
