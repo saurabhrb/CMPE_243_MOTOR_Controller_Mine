@@ -12,9 +12,11 @@
 #include "stdio.h"
 #include "motor.hpp"
 
+//Global variables for motor control
 PWM * MOTOR;
 PWM * SERVO;
 int rpm_count;
+bool system_started;
 
 //Default initialize motor/steer pwm at 100 Hz
 //Initialize the desired PWM
@@ -106,4 +108,31 @@ int get_rpm_val()
 	return rpm;
 }
 
+//Scan for start command from master node
+void recv_system_start()
+{
+	can_msg_t can_msg;
+	while (CAN_rx(can1, &can_msg, 0))
+	{
+		// Form the message header from the metadata of the arriving message
+		dbc_msg_hdr_t can_msg_hdr;
+		can_msg_hdr.dlc = can_msg.frame_fields.data_len;
+		can_msg_hdr.mid = can_msg.msg_id;
+
+		// Attempt to decode the message (brute force, but should use switch/case with MID)
+		dbc_decode_MASTER_CONTROL(&lab_can_msg, can_msg.data.bytes, &can_msg_hdr);
+		if (can_msg.data.bytes[0] == DRIVER_HEARTBEAT_cmd_START)
+		{
+			printf("recv start\n");
+		}
+	}
+	system_started = 1;
+}
+
+void send_heartbeat()
+{
+	MOTOR_HB_t can_msg = {1};
+
+	dbc_encode_and_send_MOTOR_HB(MOTOR_HB_t *from)
+}
 

@@ -57,9 +57,16 @@ bool period_init(void)
 	MOTOR = get_motor_pwm(PWM::pwm1);
 	SERVO = get_servo_pwm(PWM::pwm2);
 	stop_car();
+	system_started = 0;
 
 	//Start interrupt to count wheel rotations
 	eint3_enable_port2(0, eint_falling_edge, rpm_intr_hdlr);
+
+	//Enable can1 to rx/tx messages
+	rc = CAN_init(can1, 100, 20, 20, NULL, NULL);
+	printf("CAN init rc %d\n", rc);
+	CAN_bypass_filter_accept_all_msgs();
+	CAN_reset_bus(can1);
 
     return true; // Must return true upon success
 }
@@ -115,43 +122,54 @@ void rx_simple_can(void)
 float duty_cycle=15;
 void period_1Hz(uint32_t count)
 {
+	//First, we receive MASTER CMD to start system
+	if (!system_started)
+	{
+		recv_system_start();
+	} else {
+		send_heartbeat();
+	}
+	//After we receive this, respond with heartbeat
+	//1 HZ => motor sends heartbeat
+
+
 	//If CAN bus turns off, re-enable it
-//	if (CAN_is_bus_off(can1))
-//	{
-//		printf("Can bus is off\n");
-//		CAN_reset_bus(can1);
-//	}
+	if (CAN_is_bus_off(can1))
+	{
+		printf("Can bus is off\n");
+		CAN_reset_bus(can1);
+	}
 
 	//stop_car();
-	if (count == 5)
-	{
-		printf("go backward\n");
-		//set_speed(-25);
-		set_angle(-8);
-	}
-	if (count == 10)
-	{
-		printf("reset\n");
-		stop_car();
-	}
-	if (count == 15)
-	{
-		printf("go foward\n");
-		//set_speed(15);
-		set_angle(8);
-	}
-	if (count == 20)
-	{
-		stop_car();
-	}
-	if (count == 25)
-	{
-		set_speed(-15);
-	}
-	if (count == 30)
-	{
-		stop_car();
-	}
+//	if (count == 5)
+//	{
+//		printf("go backward\n");
+//		//set_speed(-25);
+//		set_angle(-8);
+//	}
+//	if (count == 10)
+//	{
+//		printf("reset\n");
+//		stop_car();
+//	}
+//	if (count == 15)
+//	{
+//		printf("go foward\n");
+//		//set_speed(15);
+//		set_angle(8);
+//	}
+//	if (count == 20)
+//	{
+//		stop_car();
+//	}
+//	if (count == 25)
+//	{
+//		set_speed(-15);
+//	}
+//	if (count == 30)
+//	{
+//		stop_car();
+//	}
 
 }
 
