@@ -11,6 +11,9 @@
 #include "sys_config.h"
 #include "stdio.h"
 #include "motor.hpp"
+#include "_can_dbc/generated_can.h"
+#include "can.h"
+#include "string.h"
 
 //Global variables for motor control
 PWM * MOTOR;
@@ -39,6 +42,7 @@ PWM * get_servo_pwm(PWM::pwmType pwm)
 
 //Set speed based on input speed -70 to 70 MPH
 //Duty cycle will be 10% to 20%, so set speed accordingly
+//TBD: handle reverse speed in steps
 void set_speed(float speed)
 {
 	float duty_delta = 10.0/140.0;
@@ -63,7 +67,7 @@ void set_angle(float angle)
 	float angle_delta = 10.0/60.0;
 	float new_duty = 0;
 	float duty_default = 15.0;
-	printf("delta is %f, duty default is %f\n", angle_delta, duty_default);
+	//printf("delta is %f, duty default is %f\n", angle_delta, duty_default);
 
 	if (angle == 0)
 	{
@@ -111,6 +115,7 @@ int get_rpm_val()
 //Scan for start command from master node
 void recv_system_start()
 {
+	MASTER_CONTROL_t master_can_msg;
 	can_msg_t can_msg;
 	while (CAN_rx(can1, &can_msg, 0))
 	{
@@ -120,7 +125,7 @@ void recv_system_start()
 		can_msg_hdr.mid = can_msg.msg_id;
 
 		// Attempt to decode the message (brute force, but should use switch/case with MID)
-		dbc_decode_MASTER_CONTROL(&lab_can_msg, can_msg.data.bytes, &can_msg_hdr);
+		dbc_decode_MASTER_CONTROL(&master_can_msg, can_msg.data.bytes, &can_msg_hdr);
 		if (can_msg.data.bytes[0] == DRIVER_HEARTBEAT_cmd_START)
 		{
 			printf("recv start\n");
@@ -131,8 +136,41 @@ void recv_system_start()
 
 void send_heartbeat()
 {
-	MOTOR_HB_t can_msg = {1};
-
-	dbc_encode_and_send_MOTOR_HB(MOTOR_HB_t *from)
+	MOTOR_HB_t can_msg;
+	can_msg.MOTOR_heartbeat = 0x1;
+	dbc_encode_and_send_MOTOR_HB(&can_msg);
 }
+
+void update_speed_and_angle()
+{
+	bool rc = 0;
+	MOTOR_UPDATE_t motor_can_msg;
+	can_msg_t can_msg;
+	while (CAN_rx(can1, &can_msg, 0))
+	{
+		// Form the message header from the metadata of the arriving message
+		dbc_msg_hdr_t can_msg_hdr;
+		can_msg_hdr.dlc = can_msg.frame_fields.data_len;
+		can_msg_hdr.mid = can_msg.msg_id;
+
+		// Attempt to decode the message (brute force, but should use switch/case with MID)
+		rc = dbc_decode_MOTOR_UPDATE(&motor_can_msg, can_msg.data.bytes, &can_msg_hdr);
+		if (rc == true)
+		{
+			set_speed((float)motor_can_msg.MOTOR_speed);
+			set_angle((float)motor_can_msg.MOTOR_turn_angle);
+		}
+	}
+}
+
+bool dbc_app_send_can_msg(uint32_t mid, uint8_t dlc, uint8_t bytes[8])
+{
+    can_msg_t can_msg = { 0 };
+    can_msg.msg_id                = mid;
+    can_msg.frame_fields.data_len = dlc;
+    memcpy(can_msg.data.bytes, bytes, dlc);
+
+    return CAN_tx(can1, &can_msg, 0);
+}
+
 

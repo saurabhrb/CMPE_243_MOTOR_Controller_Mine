@@ -122,23 +122,23 @@ void rx_simple_can(void)
 float duty_cycle=15;
 void period_1Hz(uint32_t count)
 {
-	//First, we receive MASTER CMD to start system
-	if (!system_started)
-	{
-		recv_system_start();
-	} else {
-		send_heartbeat();
-	}
-	//After we receive this, respond with heartbeat
-	//1 HZ => motor sends heartbeat
-
-
 	//If CAN bus turns off, re-enable it
 	if (CAN_is_bus_off(can1))
 	{
 		printf("Can bus is off\n");
 		CAN_reset_bus(can1);
 	}
+
+	//First, we receive MASTER CMD to start system
+	if (!system_started)
+	{
+		recv_system_start();
+	} else {
+		//After we receive this, respond with heartbeat
+		//1 HZ => motor sends heartbeat
+		send_heartbeat();
+	}
+
 
 	//stop_car();
 //	if (count == 5)
@@ -176,7 +176,10 @@ void period_1Hz(uint32_t count)
 void period_10Hz(uint32_t count)
 {
 	//Send current motor/angle
-	get_rpm_val();
+	//get_rpm_val();
+
+	//Decode & update motor speed/angle
+	update_speed_and_angle();
 }
 
 void period_100Hz(uint32_t count)

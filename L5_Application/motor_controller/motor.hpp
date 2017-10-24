@@ -31,6 +31,7 @@ void stop_car();
 //Relevant CAN helper functions for motor controller
 void recv_system_start();
 void send_heartbeat();
+void update_speed_and_angle();
 
 
 #endif /* L5_APPLICATION_MOTOR_CONTROLLER_MOTOR_HPP_ */
