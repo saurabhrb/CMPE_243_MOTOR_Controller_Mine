@@ -44,8 +44,23 @@
 
 #include "c_tlm_stream.h"
 #include "c_tlm_var.h"
+#include "motor_controller/motor.hpp"
 
 
+CMD_HANDLER_FUNC(motorSpeedHandler)
+{
+
+	float spd;
+	if( 1 != cmdParams.scanf("%f", &spd))
+	{
+		return false;
+	}
+	set_speed(spd);
+	cur_speed = spd;
+
+
+    return true;
+}
 
 CMD_HANDLER_FUNC(taskListHandler)
 {

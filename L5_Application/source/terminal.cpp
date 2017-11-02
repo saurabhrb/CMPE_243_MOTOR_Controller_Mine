@@ -70,7 +70,9 @@ bool terminalTask::taskEntry()
     /* remoteTask() creates shared object in its init(), so we can get it now */
     CommandProcessor &cp = mCmdProc;
 
+    CMD_HANDLER_FUNC(motorSpeedHandler);
     // System information handlers
+    cp.addHandler(motorSpeedHandler, "setspeed",    "Set motor speed in meters per second.");
     cp.addHandler(taskListHandler, "info",    "Task/CPU Info.  Use 'info 200' to get CPU during 200ms");
     cp.addHandler(memInfoHandler,  "meminfo", "See memory info");
     cp.addHandler(healthHandler,   "health",  "Output system health");

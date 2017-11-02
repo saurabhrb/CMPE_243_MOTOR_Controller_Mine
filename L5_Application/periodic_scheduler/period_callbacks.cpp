@@ -57,10 +57,10 @@ bool period_init(void)
 	MOTOR = get_motor_pwm(PWM::pwm1);
 	SERVO = get_servo_pwm(PWM::pwm2);
 	stop_car();
-	system_started = 0;
+	system_started = 1;
 
 	//Start interrupt to count wheel rotations
-	eint3_enable_port2(0, eint_falling_edge, rpm_intr_hdlr);
+	eint3_enable_port2(0, eint_falling_edge, mps_intr_hdlr);
 
 	//Enable can1 to rx/tx messages
 	rc = CAN_init(can1, 100, 20, 20, NULL, NULL);
@@ -68,6 +68,8 @@ bool period_init(void)
 	CAN_bypass_filter_accept_all_msgs();
 	CAN_reset_bus(can1);
 
+	//Get initial uptime time
+	cur_clk = sys_get_uptime_us();
     return true; // Must return true upon success
 }
 
@@ -93,7 +95,7 @@ void period_1Hz(uint32_t count)
 	}
 
 	//First, we receive MASTER CMD to start system
-	if (!system_started)
+	if (system_started == 0)
 	{
 		recv_system_start();
 	} else {
@@ -101,6 +103,7 @@ void period_1Hz(uint32_t count)
 		//1 HZ => motor sends heartbeat
 		send_heartbeat();
 	}
+
 
 
 	//stop_car();
@@ -142,7 +145,14 @@ void period_10Hz(uint32_t count)
 	//get_rpm_val();
 
 	//Decode & update motor speed/angle
-	update_speed_and_angle();
+	if (system_started)
+	{
+		update_speed_and_angle();
+		//Make sure car is going correct speed
+		check_speed((int)count);
+		send_feedback();
+	}
+
 }
 
 void period_100Hz(uint32_t count)
