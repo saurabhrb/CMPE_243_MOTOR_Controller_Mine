@@ -51,14 +51,13 @@ CMD_HANDLER_FUNC(motorSpeedHandler)
 {
 
 	float spd;
-	if( 1 != cmdParams.scanf("%f", &spd))
+	float an=0;
+	if( 1 != cmdParams.scanf("%f %f", &spd, &an))
 	{
 		return false;
 	}
-	set_speed(spd);
-	cur_speed = spd;
 
-
+	Motor::getInstance().terminal_update(spd,an);
     return true;
 }
 

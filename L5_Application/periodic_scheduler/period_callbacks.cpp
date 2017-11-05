@@ -50,30 +50,32 @@ const uint32_t PERIOD_TASKS_STACK_SIZE_BYTES = (512 * 4);
  */
 const uint32_t PERIOD_MONITOR_TASK_STACK_SIZE_BYTES = (512 * 3);
 
-/// Called once before the RTOS is started, this is a good place to initialize things once
+//flag to see first periodic function call or not
+bool first_time;
+
+// Called once before the RTOS is started, this is a good place to initialize things once
 bool period_init(void)
 {
 	bool rc;
-	MOTOR = get_motor_pwm(PWM::pwm1);
-	SERVO = get_servo_pwm(PWM::pwm2);
-	stop_car();
-	system_started = 1;
+
+	first_time = 1;
+
+	Motor::getInstance().init(); //same as complete stop of car with all values set to 0
 
 	//Start interrupt to count wheel rotations
-	eint3_enable_port2(0, eint_falling_edge, mps_intr_hdlr);
+	eint3_enable_port2(0, eint_falling_edge, rps_cnt_hdlr);
 
 	//Enable can1 to rx/tx messages
 	rc = CAN_init(can1, 100, 20, 20, NULL, NULL);
-	printf("CAN init rc %d\n", rc);
+
+	//printf("CAN init rc %d\n", rc);
 	CAN_bypass_filter_accept_all_msgs();
 	CAN_reset_bus(can1);
 
-	//Get initial uptime time
-	cur_clk = sys_get_uptime_us();
     return true; // Must return true upon success
 }
 
-/// Register any telemetry variables
+// Register any telemetry variables
 bool period_reg_tlm(void)
 {
     // Make sure "SYS_CFG_ENABLE_TLM" is enabled at sys_config.h to use Telemetry
@@ -84,73 +86,38 @@ bool period_reg_tlm(void)
  * Below are your periodic functions.
  * The argument 'count' is the number of times each periodic task is called.
  */
-float duty_cycle=15;
 void period_1Hz(uint32_t count)
 {
 	//If CAN bus turns off, re-enable it
 	if (CAN_is_bus_off(can1))
 	{
-		printf("Can bus is off\n");
+		//printf("Can bus is off\n");
 		CAN_reset_bus(can1);
 	}
 
-	//First, we receive MASTER CMD to start system
-	if (system_started == 0)
+	if(first_time)
 	{
-		recv_system_start();
-	} else {
-		//After we receive this, respond with heartbeat
-		//1 HZ => motor sends heartbeat
-		send_heartbeat();
+	    recv_system_start();
+	    first_time = 0;
 	}
 
-
-
-	//stop_car();
-//	if (count == 5)
-//	{
-//		printf("go backward\n");
-//		//set_speed(-25);
-//		set_angle(-8);
-//	}
-//	if (count == 10)
-//	{
-//		printf("reset\n");
-//		stop_car();
-//	}
-//	if (count == 15)
-//	{
-//		printf("go foward\n");
-//		//set_speed(15);
-//		set_angle(8);
-//	}
-//	if (count == 20)
-//	{
-//		stop_car();
-//	}
-//	if (count == 25)
-//	{
-//		set_speed(-15);
-//	}
-//	if (count == 30)
-//	{
-//		stop_car();
-//	}
+	if(Motor::getInstance().system_started)
+	{
+	    send_heartbeat();
+	}
 
 }
 
 void period_10Hz(uint32_t count)
 {
-	//Send current motor/angle
-	//get_rpm_val();
 
-	//Decode & update motor speed/angle
-	if (system_started)
+	if (Motor::getInstance().system_started)
 	{
-		update_speed_and_angle();
-		//Make sure car is going correct speed
-		check_speed((int)count);
-		send_feedback();
+	    Motor::getInstance().motor_periodic();
+	}
+	else
+	{
+	    Motor::getInstance().init();
 	}
 
 }
@@ -164,5 +131,5 @@ void period_100Hz(uint32_t count)
 // scheduler_add_task(new periodicSchedulerTask(run_1Khz = true));
 void period_1000Hz(uint32_t count)
 {
-    LE.toggle(4);
+    //LE.toggle(4);
 }

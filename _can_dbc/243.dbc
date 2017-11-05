@@ -67,17 +67,17 @@ BO_ 400 UPDATE_CURRENT_LOCATION: 8 GEO
  SG_ UPDATE_calculated_latitude : 0|28@1+ (0.000001,-90.000000) [-90|90] "" BRIDGE
  SG_ UPDATE_calculated_longitude : 28|29@1+ (0.000001,-180.000000) [-180|180] "" BRIDGE
  
-BO_ 450 BRIDGE_HB: 1 BRIDGE
- SG_ BRIDGE_heartbeat : 0|2@1+ (1,0) [0|0] "" MASTER 
+BO_ 500 BRIDGE_HB: 1 BRIDGE
+ SG_ Node_heartbeat_cmd : 0|2@1+ (1,0) [0|0] "" MASTER 
  
 BO_ 510 SENSOR_HB: 1 SENSOR
- SG_ SENSOR_heartbeat : 0|2@1+ (1,0) [0|0] "" MASTER
+ SG_ Node_heartbeat_cmd : 0|2@1+ (1,0) [0|0] "" MASTER
  
 BO_ 520 GEO_HB: 1 GEO
- SG_ GEO_heartbeat : 0|2@1+ (1,0) [0|0] "" MASTER
+ SG_ Node_heartbeat_cmd : 0|2@1+ (1,0) [0|0] "" MASTER
  
 BO_ 530 MOTOR_HB: 1 MOTOR
- SG_ MOTOR_heartbeat : 0|2@1+ (1,0) [0|0] "" MASTER
+ SG_ Node_heartbeat_cmd : 0|2@1+ (1,0) [0|0] "" MASTER
 
 CM_ BU_ MASTER  "The Master controller driving the car";
 CM_ BU_ MOTOR   "The Motor controller of the car";
@@ -99,5 +99,8 @@ BA_ "GenMsgCycleTime" BO_ 200 100;
 BA_ "GenMsgCycleTime" BO_ 400 100;
 BA_ "GenMsgCycleTime" BO_ 250 100;
 BA_ "FieldType" SG_ 100 MASTER_CONTROL_cmd "MASTER_CONTROL_cmd";
+BA_ "FieldType" SG_ 500 Node_heartbeat_cmd "Node_heartbeat_cmd";
 
-VAL_ 100 MASTER_CONTROL_cmd 1 "DRIVER_HEARTBEAT_cmd_START" 0 "DRIVER_HEARTBEAT_cmd_RESET" ;
+VAL_ 100 MASTER_CONTROL_cmd 1 "MASTER_cmd_START" 0 "MASTER_cmd_STOP" ;
+VAL_ 500 Node_heartbeat_cmd 2 "Node_heartbeat_STOPPED" 1 "Node_heartbeat_READY" 0 "Node_heartbeat_RUNNING" ;
+
