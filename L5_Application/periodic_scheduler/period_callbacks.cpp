@@ -39,6 +39,14 @@
 #include "can.h"
 #include "motor_controller/motor.hpp"
 
+/*
+LE(1); //on if system started
+LE(2); //on if any can_msg is successfully decoded
+LE(3); //on if sending Motor_heartbeat over can
+LE(4); //on if sending Motor_feedback over can
+*/
+
+
 /// This is the stack size used for each of the period tasks (1Hz, 10Hz, 100Hz, and 1000Hz)
 const uint32_t PERIOD_TASKS_STACK_SIZE_BYTES = (512 * 4);
 
@@ -60,7 +68,7 @@ bool period_init(void)
 
 	first_time = 1;
 
-	Motor::getInstance().init(); //same as complete stop of car with all values set to 0
+	Motor::getInstance().init(); //reset motors of the car with all values set to 0
 
 	//Start interrupt to count wheel rotations
 	eint3_enable_port2(0, eint_falling_edge, rps_cnt_hdlr);
@@ -88,6 +96,7 @@ bool period_reg_tlm(void)
  */
 void period_1Hz(uint32_t count)
 {
+    return;
 	//If CAN bus turns off, re-enable it
 	if (CAN_is_bus_off(can1))
 	{
@@ -104,26 +113,47 @@ void period_1Hz(uint32_t count)
 	if(Motor::getInstance().system_started)
 	{
 	    send_heartbeat();
+	    LE.on(1);
 	}
-
 }
 
 void period_10Hz(uint32_t count)
 {
+	 if (Motor::getInstance().system_started)
+    {
+        Motor::getInstance().motor_periodic();
+        send_feedback();
+        LE.on(1);
+    }
+    else
+    {
+        Motor::getInstance().init(); //reset car
+    }
 
-	if (Motor::getInstance().system_started)
-	{
-	    Motor::getInstance().motor_periodic();
-	}
-	else
-	{
-	    Motor::getInstance().init();
-	}
+	LE.off(1);
+    LE.off(2);
+    LE.off(3);
+    LE.off(4);
 
 }
 
 void period_100Hz(uint32_t count)
 {
+    /*if (Motor::getInstance().system_started)
+    {
+        Motor::getInstance().motor_periodic();
+        send_feedback();
+        LE.on(1);
+    }
+    else
+    {
+        Motor::getInstance().init(); //reset car
+    }
+
+    LE.off(1);
+    LE.off(2);
+    LE.off(3);
+    LE.off(4);*/
 
 }
 

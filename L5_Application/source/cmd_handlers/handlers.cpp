@@ -51,13 +51,39 @@ CMD_HANDLER_FUNC(motorSpeedHandler)
 {
 
 	float spd;
-	float an=0;
-	if( 1 != cmdParams.scanf("%f %f", &spd, &an))
+	if( 1 != cmdParams.scanf("%f", &spd))
 	{
 		return false;
 	}
 
-	Motor::getInstance().terminal_update(spd,an);
+	Motor::getInstance().terminal_update('1',spd);
+    return true;
+}
+
+CMD_HANDLER_FUNC(motorAngleHandler)
+{
+
+    float an;
+    if( 1 != cmdParams.scanf("%f",&an))
+    {
+        return false;
+    }
+
+    Motor::getInstance().terminal_update('2',an);
+    return true;
+}
+
+CMD_HANDLER_FUNC(motorStartHandler)
+{
+    if(cmdParams == "1")
+    {
+        Motor::getInstance().system_started =1;
+    }
+    else if(cmdParams == "0")
+    {
+        Motor::getInstance().system_started =0;
+    }
+
     return true;
 }
 
