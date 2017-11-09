@@ -20,10 +20,9 @@
 #define duty_factor (5.0/Traxxas_Max_Speed) //required pwm for 1ms => 15.0 +/- (1ms * duty_factor)
 #define neutral_pwm 15.0
 
-float HALT =0;
-
 Motor::Motor()
 {
+    use_prev_speed = false;
     system_started = 0;
     static PWM motor(PWM::pwm2, 100);
     motor.set(15.0);
@@ -59,7 +58,7 @@ bool Motor::init()
 }
 
 
-//Bring the car to a halt at neutral steering position, reset all Motor class values
+//Bring the car to a use_prev_speed at neutral steering position, reset all Motor class values
 void Motor::stop_car()
 {
         MOTOR->set(neutral_pwm);
@@ -157,38 +156,20 @@ void Motor::get_can_vals() //to update curr_can_speed, curr_can_angle, prev_can_
 
 void Motor::set_speed() //convert speed to pwm, and handle (curr_mps_speed != 0 && (prev_can_speed > 0 && curr_can_speed < 0))
 {
-    if(curr_can_speed < 0)
-                real_speed_dir = REV;
-            else
-                real_speed_dir = FWD;
 
-    /*if(curr_mps_speed < 0 &&  curr_can_speed > 0)
+
+    if(curr_mps_speed > 0 &&  curr_can_speed < 0)
         {
-                //prev_speed_val = curr_can_speed;
-                prev_can_speed = curr_can_speed;
+                if(curr_mps_speed != 0)
+                {
+                    use_prev_speed = 1;
+                    prev_can_speed = 0;
+                    this->check_real_speed_update();
+                    prev_can_speed = curr_can_speed;
+                    return;
+                }
         }
-    else
-    */
-    /*if((curr_mps_speed > 0 &&  curr_can_speed < 0)||(curr_mps_speed > 0 &&  curr_can_speed < 0))
-    {
-        printf("\nfirst stop here and then go reverse\n");
-        MOTOR->set(neutral_pwm + (0*duty_factor));
-        HALT = 1;
-        while(curr_mps_speed!=0)
-            {
-            prev_speed_val = 0;
-            this->check_real_speed_update();
-            }
-        if(curr_can_speed < 0)
-            real_speed_dir = REV;
-        else
-            real_speed_dir = FWD;
-                prev_can_speed =0;
-                prev_speed_val = 0;
-              //this->stop_car();
-                //return;
-    }
-*/
+
     if(prev_can_speed == curr_can_speed)
     {
         this->check_real_speed_update();
@@ -218,6 +199,10 @@ void Motor::set_speed() //convert speed to pwm, and handle (curr_mps_speed != 0 
         }
 
         prev_can_speed = curr_can_speed;
+        if(curr_can_speed < 0)
+            real_speed_dir = REV;
+        else
+            real_speed_dir = FWD;
     }
 }
 
@@ -237,22 +222,31 @@ void Motor::set_angle() //convert angle to pwm
 
 void Motor::check_real_speed_update() //to check if curr_mps_speed == curr_can_speed, if not increase prev_speed_val
 {
-    //if(abs(curr_rps_cnt - prev_rps_cnt) > 1000000000)
-    //        return;
 
-    //printf("\n curr_rps_cnt = %d\n",curr_rps_cnt);
     int diff_cnt = curr_rps_cnt;
     curr_rps_cnt = 0;
 
     if((diff_cnt)!=0)
-        printf("\n diff_cnt = %d, prev_speed_val = %f\n",diff_cnt, prev_speed_val);
+        ;//printf("\n diff_cnt = %d, prev_speed_val = %f\n",diff_cnt, prev_speed_val);
     else
         curr_mps_speed = 0.0;
 
-    //curr_mps_speed = ((int)curr_mps_speed)%33;
-
     if(curr_mps_speed != 0.0)
+    {
         printf("\ncurr_mps_speed = %f\n", curr_mps_speed);
+    }
+    else
+    {
+        if(use_prev_speed == true)
+        {
+            prev_speed_val = prev_can_speed;
+            use_prev_speed = false;
+        }
+        else
+        {
+            prev_speed_val = curr_can_speed;
+        }
+    }
 
 
     //curr_mps_speed = CIRCUMFERENCE*(diff_cnt)/0.1;

@@ -46,6 +46,7 @@ class Motor : public SingletonTemplate<Motor>
         Motor();  ///< Private constructor of this Singleton class
         friend class SingletonTemplate<Motor>;  ///< Friend class used for Singleton Template
         Speed_dir real_speed_dir;
+        bool use_prev_speed;
         PWM * MOTOR;
         PWM * SERVO;
         float curr_can_speed; //current received speed from can message
