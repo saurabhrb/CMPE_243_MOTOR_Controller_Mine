@@ -7,9 +7,9 @@
  */
 
 #include "motor.hpp"
-
+#include <math.h>
 #define speed_margin 0.05
-#define speed_step 0.25 //speed increment step for check_speed
+//#define speed_step 0.25 //speed increment step for check_speed
 
 #define DIA_m 0.2 //0.05588 //in meters = 2.2 inches
 
@@ -39,6 +39,7 @@ Motor::Motor()
     curr_mps_speed = 0; //current real speed
     prev_rps_cnt = 0; //previously read pedometer count
     curr_rps_cnt = 0; //current pedometer count coming from interrupt
+    fact = 0;
 }
 
 bool Motor::init()
@@ -54,6 +55,7 @@ bool Motor::init()
     curr_mps_speed = 0; //current real speed
     prev_rps_cnt = 0; //previously read pedometer count
     curr_rps_cnt = 0; //current pedometer count coming from interrupt
+    fact = 0;
     return true;
 }
 
@@ -69,6 +71,7 @@ void Motor::stop_car()
         prev_speed_val = 0; //last used speed to make curr_mps_speed close to can_speed
         prev_rps_cnt = 0; //previously read pedometer count
         curr_rps_cnt = 0; //current pedometer count coming from interrupt
+        fact = 0;
 }
 
 void Motor::motor_periodic()
@@ -126,12 +129,12 @@ void Motor::get_can_vals() //to update curr_can_speed, curr_can_angle, prev_can_
                     Motor::getInstance().system_started = 1;
                     //Motor::getInstance().motor_periodic();
                 }
-                else if (master_can_msg.MASTER_CONTROL_cmd == DRIVER_HEARTBEAT_cmd_RESET)
+                /*else if (master_can_msg.MASTER_CONTROL_cmd == DRIVER_HEARTBEAT_cmd_RESET)
                 {
                     Motor::getInstance().stop_car();
                     //////printf("recv start\n");
                     Motor::getInstance().system_started = 0;
-                }
+                }*/
                 LE.on(2);
             }
 
@@ -143,8 +146,8 @@ void Motor::get_can_vals() //to update curr_can_speed, curr_can_angle, prev_can_
             if (dbc_decode_MOTOR_UPDATE(&motor_can_msg, can_msg.data.bytes, &can_msg_hdr))
             {
                  curr_can_speed = ((float)motor_can_msg.MOTOR_speed);
-                 if(curr_can_speed < 0)
-                     curr_can_speed = 0;
+                 //if(curr_can_speed < 0)
+                 //    curr_can_speed = 0;
                  curr_can_angle = ((float)motor_can_msg.MOTOR_turn_angle);
                  LE.on(2);
                  LD.setNumber((int)curr_can_speed);
@@ -158,11 +161,12 @@ void Motor::set_speed() //convert speed to pwm, and handle (curr_mps_speed != 0 
 {
 
 
+
     if(curr_mps_speed > 0 &&  curr_can_speed < 0)
         {
                 if(curr_mps_speed != 0)
                 {
-                    use_prev_speed = 1;
+                    use_prev_speed = true;
                     prev_can_speed = 0;
                     this->check_real_speed_update();
                     prev_can_speed = curr_can_speed;
@@ -199,10 +203,7 @@ void Motor::set_speed() //convert speed to pwm, and handle (curr_mps_speed != 0 
         }
 
         prev_can_speed = curr_can_speed;
-        if(curr_can_speed < 0)
-            real_speed_dir = REV;
-        else
-            real_speed_dir = FWD;
+
     }
 }
 
@@ -244,7 +245,12 @@ void Motor::check_real_speed_update() //to check if curr_mps_speed == curr_can_s
         }
         else
         {
-            prev_speed_val = curr_can_speed;
+            if(curr_can_speed < 0)
+                               real_speed_dir = REV;
+                           else
+                               real_speed_dir = FWD;
+            prev_can_speed = curr_can_speed;
+           //prev_speed_val = fact * curr_can_speed;
         }
     }
 
@@ -270,11 +276,33 @@ void Motor::check_real_speed_update() //to check if curr_mps_speed == curr_can_s
                 //if(abs(delta)>=speed_step*4)
                 //    prev_speed_val+=speed_step*(abs(delta)/speed_step);
                 //else
-                    if(curr_can_speed < curr_mps_speed)
+            /*if(fact ==0 && abs(curr_mps_speed) == 1.0 && prev_speed_val !=0)
+                fact = (prev_speed_val/ curr_mps_speed);
+                */
+if(curr_mps_speed == 0 && curr_can_speed < 0)
+    prev_speed_val-=0.5;
+
+if(curr_can_speed < curr_mps_speed)
                         prev_speed_val-=speed_step;
                     else if(curr_can_speed > curr_mps_speed)
                         prev_speed_val+=speed_step;
                         //this->set_speed();
+
+         /*if(fact!=0)
+             {
+             prev_speed_val = fact*curr_can_speed;
+             fact =0;
+             }
+         */
+         if(abs(prev_speed_val) > 10.0 && curr_mps_speed == 0 && curr_can_speed < 0)
+               {
+                     prev_speed_val = 0;
+                     speed_step = 3;
+                     //fact =
+               }
+         else{
+                 speed_step = 0.25;
+         }
 
                     printf("prev_speed_val = %f\n",prev_speed_val);
                     if(abs(prev_speed_val*duty_factor) <= 5.0)
@@ -380,12 +408,12 @@ void recv_system_start()
                             Motor::getInstance().system_started = 1;
                             //Motor::getInstance().motor_periodic();
                         }
-                        else if (master_can_msg.MASTER_CONTROL_cmd == DRIVER_HEARTBEAT_cmd_RESET)
+                        /*else if (master_can_msg.MASTER_CONTROL_cmd == DRIVER_HEARTBEAT_cmd_RESET)
                         {
                             Motor::getInstance().stop_car();
                             //////printf("recv start\n");
                             Motor::getInstance().system_started = 0;
-                        }
+                        }*/
                         LE.on(2);
                     }
 

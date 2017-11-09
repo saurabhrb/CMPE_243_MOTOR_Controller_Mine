@@ -75,6 +75,7 @@ CMD_HANDLER_FUNC(motorAngleHandler)
 
 CMD_HANDLER_FUNC(motorStartHandler)
 {
+
     if(cmdParams == "1")
     {
         Motor::getInstance().system_started =1;
@@ -83,7 +84,6 @@ CMD_HANDLER_FUNC(motorStartHandler)
     {
         Motor::getInstance().system_started =0;
     }
-
     return true;
 }
 

@@ -56,6 +56,8 @@ class Motor : public SingletonTemplate<Motor>
         float prev_speed_val; //last used speed to make curr_mps_speed close to can_speed
         float curr_mps_speed; //current real speed
         int prev_rps_cnt; //previously read pedometer count
+        float fact;
+        float speed_step = 0.25;
 
 };
 
