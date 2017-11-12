@@ -23,7 +23,7 @@
 Motor::Motor()
 {
     use_prev_speed = false;
-    system_started = 0;
+    system_started = false;
     static PWM motor(PWM::pwm2, 100);
     motor.set(15.0);
     MOTOR = &motor;
@@ -117,8 +117,8 @@ void Motor::get_can_vals() //to update curr_can_speed, curr_can_angle, prev_can_
         can_msg_hdr.dlc = can_msg.frame_fields.data_len;
         can_msg_hdr.mid = can_msg.msg_id;
 
-        if(can_msg_hdr.mid == MASTER_CONTROL_HDR.mid)
-        {
+        //if(can_msg_hdr.mid == MASTER_CONTROL_HDR.mid)
+        //{
             MASTER_CONTROL_t master_can_msg;
             // Attempt to decode the message (brute force, but should use switch/case with MID)
             if (dbc_decode_MASTER_CONTROL(&master_can_msg, can_msg.data.bytes, &can_msg_hdr))
@@ -126,7 +126,7 @@ void Motor::get_can_vals() //to update curr_can_speed, curr_can_angle, prev_can_
                 if (master_can_msg.MASTER_CONTROL_cmd == DRIVER_HEARTBEAT_cmd_START)
                 {
                     //////printf("recv start\n");
-                    Motor::getInstance().system_started = 1;
+                    Motor::getInstance().system_started = true;
                     //Motor::getInstance().motor_periodic();
                 }
                 /*else if (master_can_msg.MASTER_CONTROL_cmd == DRIVER_HEARTBEAT_cmd_RESET)
@@ -138,9 +138,9 @@ void Motor::get_can_vals() //to update curr_can_speed, curr_can_angle, prev_can_
                 LE.on(2);
             }
 
-        }
-        else if(can_msg_hdr.mid == MOTOR_UPDATE_HDR.mid)
-        {
+        //}
+        //else if(can_msg_hdr.mid == MOTOR_UPDATE_HDR.mid)
+        //{
             MOTOR_UPDATE_t motor_can_msg;
             // Attempt to decode the message (brute force, but should use switch/case with MID)
             if (dbc_decode_MOTOR_UPDATE(&motor_can_msg, can_msg.data.bytes, &can_msg_hdr))
@@ -152,15 +152,13 @@ void Motor::get_can_vals() //to update curr_can_speed, curr_can_angle, prev_can_
                  LE.on(2);
                  LD.setNumber((int)curr_can_speed);
             }
-        }
+        //}
     }
 
 }
 
 void Motor::set_speed() //convert speed to pwm, and handle (curr_mps_speed != 0 && (prev_can_speed > 0 && curr_can_speed < 0))
 {
-
-
 
     if(curr_mps_speed > 0 &&  curr_can_speed < 0)
         {
@@ -256,7 +254,9 @@ void Motor::check_real_speed_update() //to check if curr_mps_speed == curr_can_s
 
 
     //curr_mps_speed = CIRCUMFERENCE*(diff_cnt)/0.1;
+    if((abs(curr_mps_speed)-(3.14*0.04)*(diff_cnt)/0.1) < 1)
     curr_mps_speed = real_speed_dir * (3.14*0.04)*(diff_cnt)/0.1;
+
     LD.setNumber(abs(curr_mps_speed));
 
     if(curr_can_speed == 0.0)
@@ -382,7 +382,7 @@ bool dbc_app_send_can_msg(uint32_t mid, uint8_t dlc, uint8_t bytes[8])
 }
 
 //Scan for start/stop command from master node
-void recv_system_start()
+bool recv_system_start()
 {
 
     MASTER_CONTROL_t master_can_msg;
@@ -396,8 +396,8 @@ void recv_system_start()
         can_msg_hdr.mid = can_msg.msg_id;
 
         // Attempt to decode the message (brute force, but should use switch/case with MID)
-        if(can_msg_hdr.mid == MASTER_CONTROL_HDR.mid)
-                {
+        //if(can_msg_hdr.mid == MASTER_CONTROL_HDR.mid)
+                //{
                     MASTER_CONTROL_t master_can_msg;
                     // Attempt to decode the message (brute force, but should use switch/case with MID)
                     if (dbc_decode_MASTER_CONTROL(&master_can_msg, can_msg.data.bytes, &can_msg_hdr))
@@ -405,7 +405,7 @@ void recv_system_start()
                         if (master_can_msg.MASTER_CONTROL_cmd == DRIVER_HEARTBEAT_cmd_START)
                         {
                             //////printf("recv start\n");
-                            Motor::getInstance().system_started = 1;
+                            Motor::getInstance().system_started = true;
                             //Motor::getInstance().motor_periodic();
                         }
                         /*else if (master_can_msg.MASTER_CONTROL_cmd == DRIVER_HEARTBEAT_cmd_RESET)
@@ -415,13 +415,15 @@ void recv_system_start()
                             Motor::getInstance().system_started = 0;
                         }*/
                         LE.on(2);
+                        return true;
                     }
 
-                }
+                //}
     }
     // Service the MIA counters
     // successful decoding resets the MIA counter, otherwise it will increment to
     // its MIA value and upon the MIA trigger, it will get replaced by your MIA struct
     //rc = dbc_handle_mia_LAB_TEST(&master_can_msg, 1000);  // 1000ms due to 1Hz
     //system_started = 1;
+    return false;
 }

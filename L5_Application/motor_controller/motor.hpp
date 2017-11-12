@@ -65,7 +65,7 @@ class Motor : public SingletonTemplate<Motor>
 void rps_cnt_hdlr(); //to update prev_rps_cnt and curr_rps_cnt;
 
 //Relevant CAN helper functions for motor controller
-void recv_system_start(); //receive start for the first time
+bool recv_system_start(); //receive start for the first time
 void send_heartbeat();
 void send_feedback(); //send voltage and mps speed
 

@@ -96,18 +96,17 @@ bool period_reg_tlm(void)
  */
 void period_1Hz(uint32_t count)
 {
-    return;
-	//If CAN bus turns off, re-enable it
+    //If CAN bus turns off, re-enable it
 	if (CAN_is_bus_off(can1))
 	{
 		//printf("Can bus is off\n");
 		CAN_reset_bus(can1);
 	}
 
-	if(first_time)
+	if(first_time==1)
 	{
-	    recv_system_start();
-	    first_time = 0;
+	    if(recv_system_start())
+	        first_time = 0;
 	}
 
 	if(Motor::getInstance().system_started)
